@@ -1,0 +1,8 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: shopping-assistant-config
+data:
+  DB_URL: jdbc:postgresql://postgresql.default.svc.cluster.local:5432/shopping
+  DB_USER: shopping
+  PORT: "8080"

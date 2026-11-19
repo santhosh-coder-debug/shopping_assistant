@@ -1,0 +1,40 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: shopping-assistant
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: shopping-assistant
+  template:
+    metadata:
+      labels:
+        app: shopping-assistant
+    spec:
+      containers:
+        - name: shopping-assistant
+          image: YOUR_REGISTRY/shopping-assistant:1.0.0
+          ports:
+            - containerPort: 8080
+          envFrom:
+            - configMapRef:
+                name: shopping-assistant-config
+            - secretRef:
+                name: shopping-assistant-secrets
+          readinessProbe:
+            httpGet:
+              path: /actuator/health/readiness
+              port: 8080
+            initialDelaySeconds: 15
+          livenessProbe:
+            httpGet:
+              path: /actuator/health/liveness
+              port: 8080
+            initialDelaySeconds: 30
+          resources:
+            requests:
+              cpu: 250m
+              memory: 512Mi
+            limits:
+              memory: 1Gi
