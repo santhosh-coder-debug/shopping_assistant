@@ -1,4 +1,33 @@
-target/
+
+# Environment variables and secrets
+.env
+.env.*
+!.env.example
+!.env.*.example
+**/application-local.properties
+**/application-secrets.properties
+
+# Java / Maven
+**/target/
+*.class
+*.log
+
+# Node / React
+**/node_modules/
+**/dist/
+**/coverage/
+*.tsbuildinfo
+
+# IntelliJ
 .idea/
 *.iml
-.env
+out/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Local database files
+*.db
+*.sqlite
+*.sqlite3
