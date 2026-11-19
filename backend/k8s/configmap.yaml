@@ -6,3 +6,4 @@ data:
   DB_URL: jdbc:postgresql://postgresql.default.svc.cluster.local:5432/shopping
   DB_USER: shopping
   PORT: "8080"
+  OLLAMA_BASE_URL: http://ollama.default.svc.cluster.local:11434

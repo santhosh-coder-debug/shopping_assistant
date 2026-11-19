@@ -2,8 +2,10 @@
 package com.ecommerce.assistant.service;
 
 import com.ecommerce.assistant.dto.ProductDto;
+import com.ecommerce.assistant.dto.ProductWriteRequest;
 import com.ecommerce.assistant.entity.Product;
 import com.ecommerce.assistant.repository.ProductRepository;
+import org.springframework.context.ApplicationEventPublisher;
 
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
@@ -18,9 +20,13 @@ import java.util.*;
 public class ProductService {
 
  private final ProductRepository repository;
+ private final ApplicationEventPublisher eventPublisher;
 
- public ProductService(ProductRepository repository) {
+ public ProductService(
+         ProductRepository repository,
+         ApplicationEventPublisher eventPublisher) {
   this.repository = repository;
+  this.eventPublisher = eventPublisher;
  }
 
  @Transactional(readOnly = true)
@@ -123,7 +129,7 @@ public class ProductService {
 
   Map<Long, ProductDto> map = new HashMap<>();
 
-  repository.findByIdInAndActiveTrue(ids)
+  repository.findByIdInAndActiveTrueAndStockQuantityGreaterThan(ids, 0)
           .forEach(p ->
                   map.put(p.getId(), ProductDto.from(p)));
 
@@ -135,16 +141,27 @@ public class ProductService {
  }
 
  @Transactional
- public ProductDto save(Product product) {
-  if (product.getPrice() == null
-          || product.getPrice().signum() < 0
-          || product.getStockQuantity() == null
-          || product.getStockQuantity() < 0) {
-   throw new IllegalArgumentException(
-           "Invalid price or stock");
-  }
+ public ProductDto create(ProductWriteRequest request) {
+  Product product = repository.save(toProduct(request, new Product()));
+  ProductDto result = ProductDto.from(product);
 
-  return ProductDto.from(repository.save(product));
+  eventPublisher.publishEvent(new ProductChangedEvent(result));
+
+  return result;
+ }
+
+ @Transactional
+ public ProductDto update(long id, ProductWriteRequest request) {
+  Product product = repository.findById(id)
+          .orElseThrow(() ->
+                  new NoSuchElementException("Product not found: " + id));
+
+  Product saved = repository.save(toProduct(request, product));
+  ProductDto result = ProductDto.from(saved);
+
+  eventPublisher.publishEvent(new ProductChangedEvent(result));
+
+  return result;
  }
 
  @Transactional(readOnly = true)
@@ -167,5 +184,22 @@ public class ProductService {
   }
 
   return trimmed;
+ }
+
+ private Product toProduct(ProductWriteRequest request, Product product) {
+  product.setSku(request.sku().trim());
+  product.setName(request.name().trim());
+  product.setBrand(normalizeNullable(request.brand()));
+  product.setCategory(normalizeNullable(request.category()));
+  product.setDescription(normalizeNullable(request.description()));
+  product.setPrice(request.price());
+  product.setCurrency(request.currency());
+  product.setStockQuantity(request.stockQuantity());
+  product.setActive(request.active());
+  return product;
+ }
+
+ private String normalizeNullable(String value) {
+  return value == null || value.isBlank() ? null : value.trim();
  }
 }

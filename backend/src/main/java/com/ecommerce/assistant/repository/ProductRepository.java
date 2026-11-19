@@ -14,6 +14,11 @@ public interface ProductRepository
 
  List<Product> findByIdInAndActiveTrue(Collection<Long> ids);
 
+ List<Product> findByIdInAndActiveTrueAndStockQuantityGreaterThan(
+         Collection<Long> ids,
+         int stockQuantity
+ );
+
  List<Product> findByActiveTrue();
 
  List<Product> findByNameIgnoreCaseAndActiveTrue(String name);

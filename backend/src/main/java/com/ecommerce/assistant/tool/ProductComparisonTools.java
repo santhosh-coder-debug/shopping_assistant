@@ -38,11 +38,7 @@ public class ProductComparisonTools {
          @ToolParam(description = "Exact second product name")
          String secondProductName) {
 
-  log.info(
-          "AI TOOL CALLED: compareProducts first={}, second={}",
-          firstProductName,
-          secondProductName
-  );
+  log.info("AI TOOL CALLED: compareProducts");
 
   ProductDto first = products.findByName(firstProductName);
   ProductDto second = products.findByName(secondProductName);
@@ -68,11 +64,7 @@ public class ProductComparisonTools {
          @ToolParam(description = "Exact second product name")
          String secondProductName) {
 
-  log.info(
-          "AI TOOL CALLED: calculatePriceDifference first={}, second={}",
-          firstProductName,
-          secondProductName
-  );
+  log.info("AI TOOL CALLED: calculatePriceDifference");
 
   ProductDto first = products.findByName(firstProductName);
   ProductDto second = products.findByName(secondProductName);
@@ -105,8 +97,6 @@ public class ProductComparisonTools {
           difference.toPlainString(),
           first.currency()
   );
-
-  log.info("Price comparison result: {}", result);
 
   return result;
  }

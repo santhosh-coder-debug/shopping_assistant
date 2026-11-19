@@ -1,5 +1,7 @@
 package com.ecommerce.assistant;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
-@SpringBootApplication
+import org.springframework.boot.autoconfigure.security.servlet.UserDetailsServiceAutoConfiguration;
+
+@SpringBootApplication(exclude = UserDetailsServiceAutoConfiguration.class)
 public class ShoppingAssistantApplication { public static void main(String[] args) { SpringApplication.run(ShoppingAssistantApplication.class,args); } }

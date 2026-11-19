@@ -1,6 +1,7 @@
 
 package com.ecommerce.assistant.service;
 
+import com.ecommerce.assistant.dto.ProductDto;
 import org.springframework.ai.document.Document;
 import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.stereotype.Service;
@@ -24,35 +25,47 @@ public class ProductEmbeddingService {
  }
 
  public int reindexAll() {
-
   var all = products.all();
 
-  for (var p : all) {
-
-   String id = UUID.nameUUIDFromBytes(
-           ("product-" + p.id())
-                   .getBytes(StandardCharsets.UTF_8)
-   ).toString();
-
-   String content = p.name()
-           + ". Brand: " + p.brand()
-           + ". Category: " + p.category()
-           + ". " + p.description();
-
-   store.delete(List.of(id));
-
-   Document document = new Document(
-           id,
-           content,
-           Map.of(
-                   "productId", p.id(),
-                   "currency", p.currency()
-           )
-   );
-
-   store.add(List.of(document));
+  for (var product : all) {
+   indexProduct(product);
   }
 
   return all.size();
+ }
+
+ public void indexProduct(ProductDto product) {
+  String documentId = documentId(product.id());
+
+  // Remove the previous embedding, if present.
+  store.delete(List.of(documentId));
+
+  // Do not index inactive or out-of-stock products.
+  if (!product.active() || product.stockQuantity() <= 0) {
+   return;
+  }
+
+  String content = product.name()
+          + ". Brand: " + product.brand()
+          + ". Category: " + product.category()
+          + ". " + product.description();
+
+  Document document = new Document(
+          documentId,
+          content,
+          Map.of(
+                  "productId", product.id(),
+                  "currency", product.currency()
+          )
+  );
+
+  store.add(List.of(document));
+ }
+
+ private String documentId(Long productId) {
+  return UUID.nameUUIDFromBytes(
+          ("product-" + productId)
+                  .getBytes(StandardCharsets.UTF_8)
+  ).toString();
  }
 }

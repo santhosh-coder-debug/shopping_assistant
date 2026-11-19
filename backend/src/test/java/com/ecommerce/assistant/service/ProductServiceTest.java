@@ -2,8 +2,11 @@
 package com.ecommerce.assistant.service;
 
 import com.ecommerce.assistant.dto.ProductDto;
+import com.ecommerce.assistant.dto.ProductWriteRequest;
 import com.ecommerce.assistant.entity.Product;
 import com.ecommerce.assistant.repository.ProductRepository;
+import org.springframework.context.ApplicationEventPublisher;
+import org.mockito.ArgumentCaptor;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -24,12 +27,14 @@ import static org.mockito.Mockito.*;
 class ProductServiceTest {
 
     private ProductRepository repository;
+    private ApplicationEventPublisher eventPublisher;
     private ProductService productService;
 
     @BeforeEach
     void setUp() {
         repository = mock(ProductRepository.class);
-        productService = new ProductService(repository);
+        eventPublisher = mock(ApplicationEventPublisher.class);
+        productService = new ProductService(repository, eventPublisher);
     }
 
     private Product createProduct(
@@ -210,35 +215,65 @@ class ProductServiceTest {
     }
 
     @Test
-    void shouldRejectNegativePrice() {
+    void shouldCreateProductFromValidatedWriteModel() {
+        ProductWriteRequest request = new ProductWriteRequest(
+                "LAP-002", "Studio Laptop", "Northstar", "Laptop",
+                "32GB RAM", new BigDecimal("1499.00"), "USD", 5, true);
+        when(repository.save(any(Product.class))).thenAnswer(invocation -> {
+            Product saved = invocation.getArgument(0);
+            saved.setId(2L);
+            return saved;
+        });
 
-        Product product = mock(Product.class);
+        ProductDto result = productService.create(request);
 
-        when(product.getPrice())
-                .thenReturn(new BigDecimal("-10.00"));
+        assertEquals(2L, result.id());
+        assertEquals("LAP-002", result.sku());
+        assertEquals("Studio Laptop", result.name());
+        assertEquals(new BigDecimal("1499.00"), result.price());
+        ArgumentCaptor<ProductChangedEvent> eventCaptor =
+                ArgumentCaptor.forClass(ProductChangedEvent.class);
 
-        assertThrows(
-                IllegalArgumentException.class,
-                () -> productService.save(product)
-        );
+        verify(eventPublisher).publishEvent(eventCaptor.capture());
 
-        verify(repository, never()).save(any(Product.class));
+        ProductChangedEvent event = eventCaptor.getValue();
+
+        assertEquals(2L, event.product().id());
+        assertEquals("Studio Laptop", event.product().name());
+        assertTrue(event.product().active());
     }
 
     @Test
-    void shouldRejectNegativeStock() {
+    void shouldUpdateInactiveProductsById() {
+        Product inactive = new Product();
+        inactive.setId(3L);
+        inactive.setSku("LAP-003");
+        inactive.setName("Inactive Laptop");
+        inactive.setPrice(new BigDecimal("500.00"));
+        inactive.setCurrency("USD");
+        inactive.setStockQuantity(0);
+        inactive.setActive(false);
+        ProductWriteRequest request = new ProductWriteRequest(
+                "LAP-003", "Restocked Laptop", "Northstar", "Laptop",
+                "Updated description", new BigDecimal("600.00"), "USD", 4, true);
+        when(repository.findById(3L)).thenReturn(Optional.of(inactive));
+        when(repository.save(any(Product.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
-        Product product = mock(Product.class);
+        ProductDto result = productService.update(3L, request);
 
-        when(product.getPrice())
-                .thenReturn(new BigDecimal("100.00"));
-        when(product.getStockQuantity()).thenReturn(-1);
+        assertEquals(3L, result.id());
+        assertEquals("Restocked Laptop", result.name());
+        assertTrue(result.active());
+        ArgumentCaptor<ProductChangedEvent> eventCaptor =
+                ArgumentCaptor.forClass(ProductChangedEvent.class);
 
-        assertThrows(
-                IllegalArgumentException.class,
-                () -> productService.save(product)
-        );
+        verify(eventPublisher).publishEvent(eventCaptor.capture());
 
-        verify(repository, never()).save(any(Product.class));
+        ProductChangedEvent event = eventCaptor.getValue();
+
+        assertEquals(3L, event.product().id());
+        assertEquals("Restocked Laptop", event.product().name());
+        assertEquals(4, event.product().stockQuantity());
+        assertTrue(event.product().active());
     }
 }

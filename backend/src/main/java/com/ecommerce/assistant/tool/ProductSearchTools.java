@@ -70,10 +70,7 @@ public class ProductSearchTools {
          )
          String currency) {
 
-  log.info(
-          "AI TOOL CALLED: searchProducts brand={}, category={}, maxPrice={}, currency={}",
-          brand, category, maxPrice, currency
-  );
+  log.info("AI TOOL CALLED: searchProducts");
 
   List<ProductDto> results =
           products.search(brand, category, maxPrice, currency);
@@ -88,7 +85,7 @@ public class ProductSearchTools {
  public List<ProductDto> semanticProductSearch(
          @ToolParam(description = "Natural language product requirements") String query) {
 
-  log.info("AI TOOL CALLED: semanticProductSearch query={}", query);
+  log.info("AI TOOL CALLED: semanticProductSearch");
 
   List<ProductDto> results = search.semantic(query);
 
@@ -100,7 +97,7 @@ public class ProductSearchTools {
  @Tool(description = "Get current catalog details for a product ID")
  public ProductDto getProductDetails(long productId) {
 
-  log.info("AI TOOL CALLED: getProductDetails productId={}", productId);
+  log.info("AI TOOL CALLED: getProductDetails");
 
   ProductDto product = products.get(productId);
 

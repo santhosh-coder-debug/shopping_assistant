@@ -19,7 +19,7 @@ const suggestions = [
 ]
 
 export default function ChatPanel() {
-    const [conversationId, setConversationId] = useState(
+    const [conversationId, setConversationId] = useState<string>(
         () => crypto.randomUUID()
     )
     const [messages, setMessages] = useState<ChatMessage[]>([])
